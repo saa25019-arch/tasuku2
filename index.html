@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tasuku - スマートタスク管理</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar and modal backdrop blur */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.5);
+      border-radius: 3px;
+    }
+    .modal-backdrop {
+      background-color: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Toast Notification Area -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <i class="fa-solid fa-check-double text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-bold bg-gradient-to-r from-brand-600 to-indigo-600 bg-clip-text text-transparent">Tasuku</h1>
+            <span id="storage-mode-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 hidden sm:inline-block">ローカルモード</span>
+          </div>
+          <p class="text-xs text-slate-400 font-medium hidden sm:block">Simple & Powerful Task Management</p>
+        </div>
+      </div>
+
+      <!-- User Auth State Section -->
+      <div id="auth-section" class="flex items-center gap-3">
+        <div id="loading-spinner" class="animate-spin text-brand-600 text-xl">
+          <i class="fa-solid fa-circle-notch"></i>
+        </div>
+
+        <div id="logged-out-view" class="hidden flex items-center gap-2">
+          <button id="btn-login" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs sm:text-sm transition-all shadow-sm active:scale-95">
+            <i class="fa-brands fa-google"></i>
+            <span>Googleログイン</span>
+          </button>
+        </div>
+
+        <div id="logged-in-view" class="hidden flex items-center gap-3">
+          <div class="flex items-center gap-2 bg-slate-100 p-1.5 pr-3 rounded-full border border-slate-200/60">
+            <img id="user-avatar" src="https://placehold.co/100x100/3b82f6/ffffff?text=U" alt="User Avatar" class="w-7 h-7 rounded-full object-cover border border-white">
+            <span id="user-name" class="text-xs font-semibold text-slate-700 max-w-[120px] truncate">User</span>
+          </div>
+          <button id="btn-logout" title="ログアウト" class="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
+
+    <!-- Guest Welcome Screen -->
+    <div id="guest-landing" class="hidden flex-1 flex flex-col items-center justify-center text-center py-8">
+      <div class="w-20 h-20 bg-brand-50 rounded-3xl flex items-center justify-center text-brand-600 mb-6 shadow-inner">
+        <i class="fa-solid fa-list-check text-4xl"></i>
+      </div>
+      <h2 class="text-3xl font-extrabold text-slate-900 mb-3">タスクをシンプル＆スマートに管理</h2>
+      <p class="text-slate-500 max-w-md mb-8 leading-relaxed text-sm">
+        Googleアカウントで同期・保存ができます。Firebase未設定の場合でもブラウザローカル保存モードで今すぐ利用可能です。
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+        <button id="btn-login-hero" class="flex-1 px-6 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0">
+          <i class="fa-brands fa-google text-base"></i>
+          <span>Googleアカウントで始める</span>
+        </button>
+
+        <button id="btn-guest-mode" class="flex-1 px-6 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-semibold text-sm shadow-md transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0">
+          <i class="fa-solid fa-bolt text-amber-400"></i>
+          <span>ログインなしで今すぐ試す</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-4xl text-left w-full">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/70 shadow-sm">
+          <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </div>
+          <h3 class="font-bold text-slate-800 mb-1">リアルタイム同期</h3>
+          <p class="text-xs text-slate-500">Firestore連携により、変更は即座に反映・保存されます。</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/70 shadow-sm">
+          <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+            <i class="fa-solid fa-tags"></i>
+          </div>
+          <h3 class="font-bold text-slate-800 mb-1">カテゴリ＆優先度</h3>
+          <p class="text-xs text-slate-500">色分けされた優先度やタグ設定で効率的にタスクを整理。</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/70 shadow-sm">
+          <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center mb-4">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3 class="font-bold text-slate-800 mb-1">安全＆フォールバック</h3>
+          <p class="text-xs text-slate-500">Google認証エラー時も自動ローカル保存モードで確実に動作。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task App Workspace (Logged in or Local Mode) -->
+    <div id="app-workspace" class="hidden flex-1 flex flex-col gap-6">
+
+      <!-- Statistics Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-list-ul"></i>
+          </div>
+          <div>
+            <div id="stat-total" class="text-2xl font-bold text-slate-800">0</div>
+            <div class="text-xs font-medium text-slate-400">総タスク数</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+          <div>
+            <div id="stat-pending" class="text-2xl font-bold text-slate-800">0</div>
+            <div class="text-xs font-medium text-slate-400">進行中</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div>
+            <div id="stat-completed" class="text-2xl font-bold text-slate-800">0</div>
+            <div class="text-xs font-medium text-slate-400">完了済み</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-chart-pie"></i>
+          </div>
+          <div class="w-full pr-2">
+            <div id="stat-progress" class="text-2xl font-bold text-slate-800">0%</div>
+            <div class="w-full bg-slate-100 h-1.5 rounded-full mt-1 overflow-hidden">
+              <div id="stat-progress-bar" class="bg-brand-600 h-full w-0 transition-all duration-500"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action & Search Toolbar -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200/70 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+        <!-- Filter Tabs -->
+        <div class="flex bg-slate-100 p-1 rounded-lg w-full md:w-auto text-xs font-semibold text-slate-600">
+          <button data-filter="all" class="filter-tab px-4 py-2 rounded-md bg-white text-slate-800 shadow-sm transition">すべて</button>
+          <button data-filter="pending" class="filter-tab px-4 py-2 rounded-md hover:text-slate-900 transition">進行中</button>
+          <button data-filter="completed" class="filter-tab px-4 py-2 rounded-md hover:text-slate-900 transition">完了</button>
+        </div>
+
+        <!-- Search and Add Controls -->
+        <div class="flex items-center gap-3 w-full md:w-auto">
+          <div class="relative flex-1 md:w-64">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input type="text" id="search-input" placeholder="タスクを検索..." class="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition">
+          </div>
+
+          <button id="btn-open-create-modal" class="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm flex items-center gap-2 shadow-sm shrink-0 transition active:scale-95">
+            <i class="fa-solid fa-plus"></i>
+            <span>新規タスク</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Task List Area -->
+      <div id="task-list" class="space-y-3">
+        <!-- Tasks will be injected here via JavaScript -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="hidden flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-dashed border-slate-200">
+        <div class="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 text-2xl mb-3">
+          <i class="fa-solid fa-inbox"></i>
+        </div>
+        <p class="text-slate-600 font-medium">該当するタスクがありません</p>
+        <p class="text-xs text-slate-400 mt-1">「新規タスク」ボタンから追加してみましょう</p>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Create / Edit Task Modal -->
+  <div id="task-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-slate-100 overflow-hidden transform scale-95 transition-transform duration-200" id="task-modal-card">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 id="modal-title" class="font-bold text-slate-800 text-lg">新規タスク追加</h3>
+        <button id="btn-close-modal" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="task-form" class="p-6 space-y-4">
+        <input type="hidden" id="task-id">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">タイトル <span class="text-red-500">*</span></label>
+          <input type="text" id="task-title-input" required placeholder="例: 仕様書のレビューを行う" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">詳細メモ</label>
+          <textarea id="task-desc-input" rows="3" placeholder="詳細やメモなどを入力..." class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition resize-none"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">優先度</label>
+            <select id="task-priority-input" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition">
+              <option value="low">低 (Low)</option>
+              <option value="medium" selected>中 (Medium)</option>
+              <option value="high">高 (High)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">カテゴリ</label>
+            <select id="task-category-input" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition">
+              <option value="仕事">仕事</option>
+              <option value="プライベート">プライベート</option>
+              <option value="勉強">勉強</option>
+              <option value="買い物">買い物</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">期限日</label>
+          <input type="date" id="task-duedate-input" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition">
+        </div>
+
+        <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+          <button type="button" id="btn-cancel-modal" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition">キャンセル</button>
+          <button type="submit" id="btn-save-task" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-md shadow-brand-500/20 transition">保存する</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirmation Dialog Modal -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl border border-slate-100 p-6 text-center transform scale-95 transition-transform duration-200" id="confirm-modal-card">
+      <div class="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-xl mx-auto mb-4">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3 id="confirm-title" class="font-bold text-slate-800 text-base mb-1">削除の確認</h3>
+      <p id="confirm-message" class="text-xs text-slate-500 mb-6">このタスクを削除してもよろしいですか？</p>
+      
+      <div class="flex items-center gap-3">
+        <button id="btn-confirm-cancel" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition">キャンセル</button>
+        <button id="btn-confirm-ok" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition shadow-sm">削除する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase & Application Logic JS -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+      getAuth, 
+      GoogleAuthProvider, 
+      signInWithPopup, 
+      signOut, 
+      onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { 
+      getFirestore, 
+      collection, 
+      doc, 
+      addDoc, 
+      updateDoc, 
+      deleteDoc, 
+      onSnapshot, 
+      serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Firebase Web Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCj7lwb-80EPyBYpr3RLwzSGhHw5BzV9hA",
+      authDomain: "tasuku-f99ba.firebaseapp.com",
+      projectId: "tasuku-f99ba",
+      storageBucket: "tasuku-f99ba.firebasestorage.app",
+      messagingSenderId: "735083454706",
+      appId: "1:735083454706:web:87e7979ebe0882fc54706b",
+      measurementId: "G-V7QTLLTMEQ"
+    };
+
+    // Initialize Firebase
+    let app, auth, db, provider;
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      provider = new GoogleAuthProvider();
+    } catch (e) {
+      console.warn("Firebase Init Warning:", e);
+    }
+
+    // Application State Management
+    let currentUser = null;
+    let isLocalMode = false;
+    let tasks = [];
+    let activeFilter = 'all';
+    let searchQuery = '';
+    let unsubscribeSnapshot = null;
+    let pendingConfirmResolve = null;
+
+    // Local Storage Helper Key
+    const LOCAL_STORAGE_KEY = 'tasuku_local_tasks';
+
+    // DOM Elements
+    const elements = {
+      loadingSpinner: document.getElementById('loading-spinner'),
+      loggedOutView: document.getElementById('logged-out-view'),
+      loggedInView: document.getElementById('logged-in-view'),
+      userAvatar: document.getElementById('user-avatar'),
+      userName: document.getElementById('user-name'),
+      storageModeBadge: document.getElementById('storage-mode-badge'),
+      guestLanding: document.getElementById('guest-landing'),
+      appWorkspace: document.getElementById('app-workspace'),
+      btnLogin: document.getElementById('btn-login'),
+      btnLoginHero: document.getElementById('btn-login-hero'),
+      btnGuestMode: document.getElementById('btn-guest-mode'),
+      btnLogout: document.getElementById('btn-logout'),
+      
+      // Task elements
+      taskList: document.getElementById('task-list'),
+      emptyState: document.getElementById('empty-state'),
+      searchInput: document.getElementById('search-input'),
+      
+      // Stats
+      statTotal: document.getElementById('stat-total'),
+      statPending: document.getElementById('stat-pending'),
+      statCompleted: document.getElementById('stat-completed'),
+      statProgress: document.getElementById('stat-progress'),
+      statProgressBar: document.getElementById('stat-progress-bar'),
+
+      // Modal Elements
+      btnOpenCreateModal: document.getElementById('btn-open-create-modal'),
+      taskModal: document.getElementById('task-modal'),
+      taskModalCard: document.getElementById('task-modal-card'),
+      btnCloseModal: document.getElementById('btn-close-modal'),
+      btnCancelModal: document.getElementById('btn-cancel-modal'),
+      taskForm: document.getElementById('task-form'),
+      modalTitle: document.getElementById('modal-title'),
+      
+      // Form Inputs
+      taskId: document.getElementById('task-id'),
+      taskTitle: document.getElementById('task-title-input'),
+      taskDesc: document.getElementById('task-desc-input'),
+      taskPriority: document.getElementById('task-priority-input'),
+      taskCategory: document.getElementById('task-category-input'),
+      taskDueDate: document.getElementById('task-duedate-input'),
+
+      // Confirm Modal
+      confirmModal: document.getElementById('confirm-modal'),
+      confirmModalCard: document.getElementById('confirm-modal-card'),
+      confirmTitle: document.getElementById('confirm-title'),
+      confirmMessage: document.getElementById('confirm-message'),
+      btnConfirmOk: document.getElementById('btn-confirm-ok'),
+      btnConfirmCancel: document.getElementById('btn-confirm-cancel'),
+
+      // Toast Container
+      toastContainer: document.getElementById('toast-container')
+    };
+
+    // Firebase Authentication State Observer
+    if (auth) {
+      onAuthStateChanged(auth, (user) => {
+        elements.loadingSpinner.classList.add('hidden');
+        if (user && !isLocalMode) {
+          currentUser = user;
+          updateUIForLoggedInUser(user.displayName || user.email, user.photoURL, "クラウド同期モード");
+          subscribeToTasks(user.uid);
+        } else if (!isLocalMode) {
+          showGuestLandingScreen();
+        }
+      });
+    } else {
+      elements.loadingSpinner.classList.add('hidden');
+      showGuestLandingScreen();
+    }
+
+    // Google Login Handler with Automatic Fallback
+    const handleLogin = async () => {
+      elements.btnLogin.disabled = true;
+      elements.btnLoginHero.disabled = true;
+
+      try {
+        if (!auth) throw new Error("Firebase Auth is not initialized");
+        await signInWithPopup(auth, provider);
+        showToast('Googleアカウントでログインしました', 'success');
+      } catch (error) {
+        console.warn('Google Login handled error:', error.code || error.message);
+
+        // Fallback gracefully to local mode so user can immediately use the app!
