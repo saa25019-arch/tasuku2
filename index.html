@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tasuku - スマートタスク管理</title>
+  <title>Tasuku - クラウドタスク管理</title>
+  
+  <!-- Inline SVG Favicon (404エラー防止) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☑️</text></svg>">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -36,7 +39,6 @@
     }
   </script>
   <style>
-    /* Custom scrollbar and modal backdrop blur */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -69,9 +71,9 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 class="text-xl font-bold bg-gradient-to-r from-brand-600 to-indigo-600 bg-clip-text text-transparent">Tasuku</h1>
-            <span id="storage-mode-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 hidden sm:inline-block">ローカルモード</span>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-brand-600 border border-blue-200">クラウド同期</span>
           </div>
-          <p class="text-xs text-slate-400 font-medium hidden sm:block">Simple & Powerful Task Management</p>
+          <p class="text-xs text-slate-400 font-medium hidden sm:block">Firebase Cloud Task Manager</p>
         </div>
       </div>
 
@@ -81,17 +83,17 @@
           <i class="fa-solid fa-circle-notch"></i>
         </div>
 
-        <div id="logged-out-view" class="hidden flex items-center gap-2">
-          <button id="btn-login" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs sm:text-sm transition-all shadow-sm active:scale-95">
+        <div id="logged-out-header-view" class="hidden">
+          <button id="btn-login-header" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs sm:text-sm transition shadow-sm active:scale-95">
             <i class="fa-brands fa-google"></i>
             <span>Googleログイン</span>
           </button>
         </div>
 
-        <div id="logged-in-view" class="hidden flex items-center gap-3">
+        <div id="logged-in-header-view" class="hidden flex items-center gap-3">
           <div class="flex items-center gap-2 bg-slate-100 p-1.5 pr-3 rounded-full border border-slate-200/60">
-            <img id="user-avatar" src="https://placehold.co/100x100/3b82f6/ffffff?text=U" alt="User Avatar" class="w-7 h-7 rounded-full object-cover border border-white">
-            <span id="user-name" class="text-xs font-semibold text-slate-700 max-w-[120px] truncate">User</span>
+            <img id="user-avatar" src="" alt="User Avatar" class="w-7 h-7 rounded-full object-cover border border-white">
+            <span id="user-name" class="text-xs font-semibold text-slate-700 max-w-[120px] truncate">ユーザー</span>
           </div>
           <button id="btn-logout" title="ログアウト" class="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition">
             <i class="fa-solid fa-right-from-bracket"></i>
@@ -104,54 +106,54 @@
   <!-- Main Container -->
   <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
 
-    <!-- Guest Welcome Screen -->
-    <div id="guest-landing" class="hidden flex-1 flex flex-col items-center justify-center text-center py-8">
+    <!-- Unauthenticated View (Login Required Screen) -->
+    <div id="login-required-landing" class="hidden flex-1 flex flex-col items-center justify-center text-center py-12">
       <div class="w-20 h-20 bg-brand-50 rounded-3xl flex items-center justify-center text-brand-600 mb-6 shadow-inner">
-        <i class="fa-solid fa-list-check text-4xl"></i>
+        <i class="fa-solid fa-cloud-arrow-up text-4xl"></i>
       </div>
-      <h2 class="text-3xl font-extrabold text-slate-900 mb-3">タスクをシンプル＆スマートに管理</h2>
+      <h2 class="text-3xl font-extrabold text-slate-900 mb-3">Googleアカウントでログイン</h2>
       <p class="text-slate-500 max-w-md mb-8 leading-relaxed text-sm">
-        Googleアカウントで同期・保存ができます。Firebase未設定の場合でもブラウザローカル保存モードで今すぐ利用可能です。
+        Tasukuはリアルタイムクラウド同期対応のタスク管理ツールです。<br>ご利用にはGoogleアカウントでのログインが必要です。
       </p>
 
-      <div class="flex flex-col sm:flex-row gap-3 w-full max-w-md">
-        <button id="btn-login-hero" class="flex-1 px-6 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-lg shadow-brand-500/25 transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0">
-          <i class="fa-brands fa-google text-base"></i>
+      <div class="w-full max-w-sm">
+        <button id="btn-login-hero" class="w-full px-6 py-4 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-base shadow-xl shadow-brand-500/25 transition-all flex items-center justify-center gap-3 hover:-translate-y-0.5 active:translate-y-0">
+          <i class="fa-brands fa-google text-xl"></i>
           <span>Googleアカウントで始める</span>
         </button>
-
-        <button id="btn-guest-mode" class="flex-1 px-6 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-semibold text-sm shadow-md transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 active:translate-y-0">
-          <i class="fa-solid fa-bolt text-amber-400"></i>
-          <span>ログインなしで今すぐ試す</span>
-        </button>
+        <p class="text-[11px] text-slate-400 mt-2.5 text-center flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-globe text-slate-400"></i>
+          <span>現在のドメイン:</span>
+          <span id="current-domain-display" class="font-mono font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">--</span>
+        </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-4xl text-left w-full">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-4xl text-left w-full">
         <div class="bg-white p-6 rounded-2xl border border-slate-200/70 shadow-sm">
           <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
-            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <i class="fa-solid fa-rotate text-lg"></i>
           </div>
           <h3 class="font-bold text-slate-800 mb-1">リアルタイム同期</h3>
-          <p class="text-xs text-slate-500">Firestore連携により、変更は即座に反映・保存されます。</p>
+          <p class="text-xs text-slate-500">Firestoreにより、どの端末から変更しても一瞬で共有されます。</p>
         </div>
         <div class="bg-white p-6 rounded-2xl border border-slate-200/70 shadow-sm">
           <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-            <i class="fa-solid fa-tags"></i>
+            <i class="fa-solid fa-shield-halved text-lg"></i>
           </div>
-          <h3 class="font-bold text-slate-800 mb-1">カテゴリ＆優先度</h3>
-          <p class="text-xs text-slate-500">色分けされた優先度やタグ設定で効率的にタスクを整理。</p>
+          <h3 class="font-bold text-slate-800 mb-1">高いセキュリティ</h3>
+          <p class="text-xs text-slate-500">ユーザーごとの認証データ領域で自身のタスクデータのみを保護。</p>
         </div>
         <div class="bg-white p-6 rounded-2xl border border-slate-200/70 shadow-sm">
           <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center mb-4">
-            <i class="fa-solid fa-shield-halved"></i>
+            <i class="fa-solid fa-layer-group text-lg"></i>
           </div>
-          <h3 class="font-bold text-slate-800 mb-1">安全＆フォールバック</h3>
-          <p class="text-xs text-slate-500">Google認証エラー時も自動ローカル保存モードで確実に動作。</p>
+          <h3 class="font-bold text-slate-800 mb-1">優先度＆タグ管理</h3>
+          <p class="text-xs text-slate-500">カテゴリや期限日、優先度を設定して効率良く整理できます。</p>
         </div>
       </div>
     </div>
 
-    <!-- Task App Workspace (Logged in or Local Mode) -->
+    <!-- Task App Workspace (Logged In Only) -->
     <div id="app-workspace" class="hidden flex-1 flex flex-col gap-6">
 
       <!-- Statistics Bar -->
@@ -224,7 +226,7 @@
 
       <!-- Task List Area -->
       <div id="task-list" class="space-y-3">
-        <!-- Tasks will be injected here via JavaScript -->
+        <!-- Dynamic Task Cards Injected Here -->
       </div>
 
       <!-- Empty State -->
@@ -233,7 +235,7 @@
           <i class="fa-solid fa-inbox"></i>
         </div>
         <p class="text-slate-600 font-medium">該当するタスクがありません</p>
-        <p class="text-xs text-slate-400 mt-1">「新規タスク」ボタンから追加してみましょう</p>
+        <p class="text-xs text-slate-400 mt-1">「新規タスク」ボタンからタスクをクラウドへ追加しましょう</p>
       </div>
 
     </div>
@@ -254,12 +256,12 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">タイトル <span class="text-red-500">*</span></label>
-          <input type="text" id="task-title-input" required placeholder="例: 仕様書のレビューを行う" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition">
+          <input type="text" id="task-title-input" required placeholder="例: システム仕様書の改訂" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">詳細メモ</label>
-          <textarea id="task-desc-input" rows="3" placeholder="詳細やメモなどを入力..." class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition resize-none"></textarea>
+          <textarea id="task-desc-input" rows="3" placeholder="詳細な手順やメモを入力..." class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition resize-none"></textarea>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -291,20 +293,23 @@
 
         <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
           <button type="button" id="btn-cancel-modal" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition">キャンセル</button>
-          <button type="submit" id="btn-save-task" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-md shadow-brand-500/20 transition">保存する</button>
+          <button type="submit" id="btn-save-task" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-md shadow-brand-500/20 transition flex items-center gap-2">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>クラウドに保存</span>
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Confirmation Dialog Modal -->
+  <!-- Delete Confirmation Dialog Modal -->
   <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop opacity-0 pointer-events-none transition-opacity duration-200">
     <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl border border-slate-100 p-6 text-center transform scale-95 transition-transform duration-200" id="confirm-modal-card">
       <div class="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-xl mx-auto mb-4">
         <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
       <h3 id="confirm-title" class="font-bold text-slate-800 text-base mb-1">削除の確認</h3>
-      <p id="confirm-message" class="text-xs text-slate-500 mb-6">このタスクを削除してもよろしいですか？</p>
+      <p id="confirm-message" class="text-xs text-slate-500 mb-6">このタスクをクラウドから削除しますか？</p>
       
       <div class="flex items-center gap-3">
         <button id="btn-confirm-cancel" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition">キャンセル</button>
@@ -313,16 +318,41 @@
     </div>
   </div>
 
+  <!-- Firebase Setup Help / Error Modal -->
+  <div id="config-error-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-slate-100 p-6 transform scale-95 transition-transform duration-200" id="config-error-card">
+      <div class="flex items-center gap-3 mb-4 text-amber-600">
+        <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0 text-xl">
+          <i class="fa-solid fa-gear"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 text-base" id="error-modal-title">Firebase Consoleの設定が必要です</h3>
+          <p class="text-xs text-slate-500" id="error-modal-subtitle">認証エラーを解決するための手順</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-3 mb-6 leading-relaxed" id="error-modal-body">
+        <!-- Error text and steps injected here -->
+      </div>
+
+      <div class="flex justify-end">
+        <button id="btn-close-error-modal" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold transition">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase & Application Logic JS -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { 
       getAuth, 
       GoogleAuthProvider, 
       signInWithPopup, 
       signOut, 
       onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { 
       getFirestore, 
       collection, 
@@ -332,7 +362,10 @@
       deleteDoc, 
       onSnapshot, 
       serverTimestamp 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // Application ID (Strict Storage Hierarchy Rule)
+    const APP_ID = 'tasuku-app';
 
     // Firebase Web Configuration
     const firebaseConfig = {
@@ -345,7 +378,7 @@
       measurementId: "G-V7QTLLTMEQ"
     };
 
-    // Initialize Firebase
+    // Initialize Firebase Services
     let app, auth, db, provider;
     try {
       app = initializeApp(firebaseConfig);
@@ -353,49 +386,45 @@
       db = getFirestore(app);
       provider = new GoogleAuthProvider();
     } catch (e) {
-      console.warn("Firebase Init Warning:", e);
+      console.error("Firebase Initialization Error:", e);
     }
 
-    // Application State Management
+    // State Variables
     let currentUser = null;
-    let isLocalMode = false;
     let tasks = [];
     let activeFilter = 'all';
     let searchQuery = '';
     let unsubscribeSnapshot = null;
     let pendingConfirmResolve = null;
 
-    // Local Storage Helper Key
-    const LOCAL_STORAGE_KEY = 'tasuku_local_tasks';
-
     // DOM Elements
     const elements = {
       loadingSpinner: document.getElementById('loading-spinner'),
-      loggedOutView: document.getElementById('logged-out-view'),
-      loggedInView: document.getElementById('logged-in-view'),
+      loggedOutHeaderView: document.getElementById('logged-out-header-view'),
+      loggedInHeaderView: document.getElementById('logged-in-header-view'),
       userAvatar: document.getElementById('user-avatar'),
       userName: document.getElementById('user-name'),
-      storageModeBadge: document.getElementById('storage-mode-badge'),
-      guestLanding: document.getElementById('guest-landing'),
+      
+      loginRequiredLanding: document.getElementById('login-required-landing'),
       appWorkspace: document.getElementById('app-workspace'),
-      btnLogin: document.getElementById('btn-login'),
+      
+      btnLoginHeader: document.getElementById('btn-login-header'),
       btnLoginHero: document.getElementById('btn-login-hero'),
-      btnGuestMode: document.getElementById('btn-guest-mode'),
       btnLogout: document.getElementById('btn-logout'),
       
-      // Task elements
+      // Task Elements
       taskList: document.getElementById('task-list'),
       emptyState: document.getElementById('empty-state'),
       searchInput: document.getElementById('search-input'),
       
-      // Stats
+      // Dashboard Stats
       statTotal: document.getElementById('stat-total'),
       statPending: document.getElementById('stat-pending'),
       statCompleted: document.getElementById('stat-completed'),
       statProgress: document.getElementById('stat-progress'),
       statProgressBar: document.getElementById('stat-progress-bar'),
 
-      // Modal Elements
+      // Task Modal Elements
       btnOpenCreateModal: document.getElementById('btn-open-create-modal'),
       taskModal: document.getElementById('task-modal'),
       taskModalCard: document.getElementById('task-modal-card'),
@@ -412,7 +441,7 @@
       taskCategory: document.getElementById('task-category-input'),
       taskDueDate: document.getElementById('task-duedate-input'),
 
-      // Confirm Modal
+      // Confirm Modal Elements
       confirmModal: document.getElementById('confirm-modal'),
       confirmModalCard: document.getElementById('confirm-modal-card'),
       confirmTitle: document.getElementById('confirm-title'),
@@ -420,37 +449,546 @@
       btnConfirmOk: document.getElementById('btn-confirm-ok'),
       btnConfirmCancel: document.getElementById('btn-confirm-cancel'),
 
+      // Error Help Modal
+      configErrorModal: document.getElementById('config-error-modal'),
+      configErrorCard: document.getElementById('config-error-card'),
+      errorModalTitle: document.getElementById('error-modal-title'),
+      errorModalSubtitle: document.getElementById('error-modal-subtitle'),
+      errorModalBody: document.getElementById('error-modal-body'),
+      btnCloseErrorModal: document.getElementById('btn-close-error-modal'),
+
       // Toast Container
       toastContainer: document.getElementById('toast-container')
     };
 
-    // Firebase Authentication State Observer
-    if (auth) {
-      onAuthStateChanged(auth, (user) => {
-        elements.loadingSpinner.classList.add('hidden');
-        if (user && !isLocalMode) {
-          currentUser = user;
-          updateUIForLoggedInUser(user.displayName || user.email, user.photoURL, "クラウド同期モード");
-          subscribeToTasks(user.uid);
-        } else if (!isLocalMode) {
-          showGuestLandingScreen();
-        }
-      });
-    } else {
+    // Firebase Auth State Observer
+    onAuthStateChanged(auth, (user) => {
       elements.loadingSpinner.classList.add('hidden');
-      showGuestLandingScreen();
-    }
+      
+      // Update current domain display on UI
+      const domainDisplay = document.getElementById('current-domain-display');
+      if (domainDisplay) {
+        domainDisplay.textContent = window.location.hostname || window.location.host || 'localhost';
+      }
 
-    // Google Login Handler with Automatic Fallback
-    const handleLogin = async () => {
-      elements.btnLogin.disabled = true;
+      if (user) {
+        currentUser = user;
+        updateUIForAuthenticatedUser(user);
+        subscribeToUserTasks(user.uid);
+      } else {
+        currentUser = null;
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
+        tasks = [];
+        updateUIForUnauthenticatedUser();
+      }
+    });
+
+    // Google Sign-In Functionality
+    async function handleLogin() {
+      elements.btnLoginHeader.disabled = true;
       elements.btnLoginHero.disabled = true;
 
       try {
-        if (!auth) throw new Error("Firebase Auth is not initialized");
         await signInWithPopup(auth, provider);
         showToast('Googleアカウントでログインしました', 'success');
       } catch (error) {
-        console.warn('Google Login handled error:', error.code || error.message);
+        console.error('Google Sign-In Error:', error.code, error.message);
+        handleAuthError(error);
+      } finally {
+        elements.btnLoginHeader.disabled = false;
+        elements.btnLoginHero.disabled = false;
+      }
+    }
 
-        // Fallback gracefully to local mode so user can immediately use the app!
+    // Google Logout Functionality
+    async function handleLogout() {
+      try {
+        await signOut(auth);
+        showToast('ログアウトしました', 'info');
+      } catch (error) {
+        console.error('Logout error:', error);
+        showToast('ログアウト処理中にエラーが発生しました', 'error');
+      }
+    }
+
+    elements.btnLoginHeader.addEventListener('click', handleLogin);
+    elements.btnLoginHero.addEventListener('click', handleLogin);
+    elements.btnLogout.addEventListener('click', handleLogout);
+
+    function updateUIForAuthenticatedUser(user) {
+      elements.loggedOutHeaderView.classList.add('hidden');
+      elements.loggedInHeaderView.classList.remove('hidden');
+      
+      const displayName = user.displayName || user.email || 'ユーザー';
+      const initialChar = displayName.charAt(0).toUpperCase();
+      const defaultAvatar = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%233b82f6'/><text x='50%' y='55%' font-size='45' font-family='sans-serif' fill='%23ffffff' text-anchor='middle' dominant-baseline='middle'>${encodeURIComponent(initialChar)}</text></svg>`;
+      
+      elements.userAvatar.src = user.photoURL || defaultAvatar;
+      elements.userName.textContent = displayName;
+
+      elements.loginRequiredLanding.classList.add('hidden');
+      elements.appWorkspace.classList.remove('hidden');
+    }
+
+    function updateUIForUnauthenticatedUser() {
+      elements.loggedInHeaderView.classList.add('hidden');
+      elements.loggedOutHeaderView.classList.remove('hidden');
+
+      elements.appWorkspace.classList.add('hidden');
+      elements.loginRequiredLanding.classList.remove('hidden');
+    }
+
+    // Firestore Listener
+    function subscribeToUserTasks(userId) {
+      // Path Rule: /artifacts/{appId}/users/{userId}/{collectionName}
+      const tasksCollectionRef = collection(db, 'artifacts', APP_ID, 'users', userId, 'tasks');
+
+      unsubscribeSnapshot = onSnapshot(tasksCollectionRef, (snapshot) => {
+        tasks = snapshot.docs.map(docSnap => ({
+          id: docSnap.id,
+          ...docSnap.data()
+        }));
+
+        // Sort in memory by createdAtMillis descending (Rule 2: No complex queries)
+        tasks.sort((a, b) => (b.createdAtMillis || 0) - (a.createdAtMillis || 0));
+        
+        renderTasks();
+        updateStats();
+      }, (error) => {
+        console.error('Firestore snapshot listener error:', error);
+        showToast('タスクデータの読み込みに失敗しました: ' + error.message, 'error');
+      });
+    }
+
+    // Render Tasks Function
+    function renderTasks() {
+      elements.taskList.innerHTML = '';
+
+      const filteredTasks = tasks.filter(task => {
+        if (activeFilter === 'pending' && task.completed) return false;
+        if (activeFilter === 'completed' && !task.completed) return false;
+
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase();
+          const matchTitle = task.title?.toLowerCase().includes(query);
+          const matchDesc = task.description?.toLowerCase().includes(query);
+          const matchCategory = task.category?.toLowerCase().includes(query);
+          return matchTitle || matchDesc || matchCategory;
+        }
+
+        return true;
+      });
+
+      if (filteredTasks.length === 0) {
+        elements.emptyState.classList.remove('hidden');
+        elements.emptyState.classList.add('flex');
+      } else {
+        elements.emptyState.classList.add('hidden');
+        elements.emptyState.classList.remove('flex');
+
+        filteredTasks.forEach(task => {
+          const taskCard = createTaskElement(task);
+          elements.taskList.appendChild(taskCard);
+        });
+      }
+    }
+
+    // Create Single Task Card DOM
+    function createTaskElement(task) {
+      const card = document.createElement('div');
+      card.className = `bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm transition hover:shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${task.completed ? 'bg-slate-50/60 opacity-75' : ''}`;
+
+      // Priority Label & Color Styles
+      let priorityClass = 'bg-slate-100 text-slate-600';
+      let priorityLabel = '中';
+      if (task.priority === 'high') {
+        priorityClass = 'bg-rose-50 text-rose-600 border border-rose-200';
+        priorityLabel = '高';
+      } else if (task.priority === 'low') {
+        priorityClass = 'bg-slate-100 text-slate-500';
+        priorityLabel = '低';
+      } else if (task.priority === 'medium') {
+        priorityClass = 'bg-amber-50 text-amber-600 border border-amber-200';
+        priorityLabel = '中';
+      }
+
+      // Category Styles
+      const categoryColors = {
+        '仕事': 'bg-blue-50 text-blue-600',
+        'プライベート': 'bg-purple-50 text-purple-600',
+        '勉強': 'bg-emerald-50 text-emerald-600',
+        '買い物': 'bg-orange-50 text-orange-600',
+        'その他': 'bg-slate-100 text-slate-600'
+      };
+      const categoryClass = categoryColors[task.category] || 'bg-slate-100 text-slate-600';
+
+      // Due Date Calculation
+      let dueDateHtml = '';
+      if (task.dueDate) {
+        const today = new Date().toISOString().split('T')[0];
+        const isOverdue = !task.completed && task.dueDate < today;
+        dueDateHtml = `
+          <span class="text-xs ${isOverdue ? 'text-red-500 font-semibold' : 'text-slate-400'} flex items-center gap-1">
+            <i class="fa-regular fa-calendar"></i>
+            ${task.dueDate} ${isOverdue ? '(期限切れ)' : ''}
+          </span>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="flex items-start gap-3 flex-1 min-w-0">
+          <button class="btn-toggle-complete mt-0.5 w-5 h-5 rounded-md border ${task.completed ? 'bg-brand-600 border-brand-600 text-white' : 'border-slate-300 hover:border-brand-500'} flex items-center justify-center shrink-0 transition">
+            ${task.completed ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+          </button>
+          
+          <div class="space-y-1 min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-medium text-slate-800 ${task.completed ? 'line-through text-slate-400' : ''} break-words">${escapeHtml(task.title)}</span>
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${priorityClass}">優先度: ${priorityLabel}</span>
+              ${task.category ? `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${categoryClass}">${escapeHtml(task.category)}</span>` : ''}
+            </div>
+
+            ${task.description ? `<p class="text-xs text-slate-500 ${task.completed ? 'line-through text-slate-400' : ''} break-words">${escapeHtml(task.description)}</p>` : ''}
+            
+            ${dueDateHtml}
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1 justify-end shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
+          <button class="btn-edit-task p-2 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition" title="編集">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          <button class="btn-delete-task p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="削除">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      `;
+
+      card.querySelector('.btn-toggle-complete').addEventListener('click', () => toggleTaskComplete(task));
+      card.querySelector('.btn-edit-task').addEventListener('click', () => openModalForEdit(task));
+      card.querySelector('.btn-delete-task').addEventListener('click', () => deleteTask(task.id));
+
+      return card;
+    }
+
+    // Toggle Task Complete
+    async function toggleTaskComplete(task) {
+      if (!currentUser) return;
+      try {
+        const taskRef = doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'tasks', task.id);
+        await updateDoc(taskRef, {
+          completed: !task.completed,
+          updatedAt: serverTimestamp()
+        });
+      } catch (error) {
+        console.error('Error updating task completion:', error);
+        showToast('ステータスの更新に失敗しました', 'error');
+      }
+    }
+
+    // Form Submit Listener (Create or Update Task in Firestore)
+    elements.taskForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!currentUser) {
+        showToast('ログインが必要です', 'error');
+        return;
+      }
+
+      const id = elements.taskId.value;
+      const title = elements.taskTitle.value.trim();
+      const description = elements.taskDesc.value.trim();
+      const priority = elements.taskPriority.value;
+      const category = elements.taskCategory.value;
+      const dueDate = elements.taskDueDate.value;
+
+      if (!title) return;
+
+      const payload = {
+        title,
+        description,
+        priority,
+        category,
+        dueDate,
+        createdAtMillis: Date.now(),
+        updatedAt: serverTimestamp()
+      };
+
+      try {
+        if (id) {
+          // Update existing doc
+          const taskRef = doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'tasks', id);
+          await updateDoc(taskRef, payload);
+          showToast('タスクを更新しました', 'success');
+        } else {
+          // Create new doc
+          payload.completed = false;
+          payload.createdAt = serverTimestamp();
+          const tasksCollectionRef = collection(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'tasks');
+          await addDoc(tasksCollectionRef, payload);
+          showToast('新規タスクを追加しました', 'success');
+        }
+        closeModal();
+      } catch (error) {
+        console.error('Error saving task to Firestore:', error);
+        showToast('タスクの保存に失敗しました: ' + error.message, 'error');
+      }
+    });
+
+    // Delete Task from Firestore
+    async function deleteTask(taskId) {
+      if (!currentUser) return;
+
+      const confirmed = await showConfirmModal('タスクの削除', 'このタスクをクラウドから削除してもよろしいですか？');
+      if (!confirmed) return;
+
+      try {
+        const taskRef = doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'tasks', taskId);
+        await deleteDoc(taskRef);
+        showToast('タスクを削除しました', 'info');
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        showToast('タスクの削除に失敗しました', 'error');
+      }
+    }
+
+    // Dashboard Stats Calculator
+    function updateStats() {
+      const total = tasks.length;
+      const completed = tasks.filter(t => t.completed).length;
+      const pending = total - completed;
+      const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+      elements.statTotal.textContent = total;
+      elements.statPending.textContent = pending;
+      elements.statCompleted.textContent = completed;
+      elements.statProgress.textContent = `${percentage}%`;
+      elements.statProgressBar.style.width = `${percentage}%`;
+    }
+
+    // Filter Switch Listener
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.filter-tab').forEach(t => {
+          t.classList.remove('bg-white', 'text-slate-800', 'shadow-sm');
+          t.classList.add('hover:text-slate-900');
+        });
+
+        e.target.classList.add('bg-white', 'text-slate-800', 'shadow-sm');
+        activeFilter = e.target.getAttribute('data-filter');
+        renderTasks();
+      });
+    });
+
+    // Search Input Event
+    elements.searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim();
+      renderTasks();
+    });
+
+    // Task Modal Helpers
+    function openModalForCreate() {
+      elements.modalTitle.textContent = '新規タスク追加';
+      elements.taskId.value = '';
+      elements.taskForm.reset();
+      showModal(elements.taskModal, elements.taskModalCard);
+    }
+
+    function openModalForEdit(task) {
+      elements.modalTitle.textContent = 'タスクの編集';
+      elements.taskId.value = task.id;
+      elements.taskTitle.value = task.title || '';
+      elements.taskDesc.value = task.description || '';
+      elements.taskPriority.value = task.priority || 'medium';
+      elements.taskCategory.value = task.category || '仕事';
+      elements.taskDueDate.value = task.dueDate || '';
+      showModal(elements.taskModal, elements.taskModalCard);
+    }
+
+    function showModal(modalEl, cardEl) {
+      modalEl.classList.remove('opacity-0', 'pointer-events-none');
+      cardEl.classList.remove('scale-95');
+      cardEl.classList.add('scale-100');
+    }
+
+    function closeModal() {
+      elements.taskModalCard.classList.remove('scale-100');
+      elements.taskModalCard.classList.add('scale-95');
+      elements.taskModal.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    elements.btnOpenCreateModal.addEventListener('click', openModalForCreate);
+    elements.btnCloseModal.addEventListener('click', closeModal);
+    elements.btnCancelModal.addEventListener('click', closeModal);
+
+    // Confirmation Modal Promise System
+    function showConfirmModal(title, message) {
+      elements.confirmTitle.textContent = title;
+      elements.confirmMessage.textContent = message;
+
+      elements.confirmModal.classList.remove('opacity-0', 'pointer-events-none');
+      elements.confirmModalCard.classList.remove('scale-95');
+      elements.confirmModalCard.classList.add('scale-100');
+
+      return new Promise((resolve) => {
+        pendingConfirmResolve = resolve;
+      });
+    }
+
+    function closeConfirmModal(result) {
+      elements.confirmModalCard.classList.remove('scale-100');
+      elements.confirmModalCard.classList.add('scale-95');
+      elements.confirmModal.classList.add('opacity-0', 'pointer-events-none');
+      if (pendingConfirmResolve) {
+        pendingConfirmResolve(result);
+        pendingConfirmResolve = null;
+      }
+    }
+
+    elements.btnConfirmOk.addEventListener('click', () => closeConfirmModal(true));
+    elements.btnConfirmCancel.addEventListener('click', () => closeConfirmModal(false));
+
+    // Handle Auth Errors with Guided Instructions
+    function handleAuthError(error) {
+      if (error.code === 'auth/configuration-not-found') {
+        elements.errorModalTitle.textContent = 'Googleログイン未有効化エラー';
+        elements.errorModalSubtitle.textContent = 'Firebase Consoleでの設定が不足しています';
+        elements.errorModalBody.innerHTML = `
+          <p class="font-bold text-red-600 mb-2">エラーコード: auth/configuration-not-found</p>
+          <p class="mb-2">FirebaseコンソールでGoogleプロバイダが有効化されていません。以下の手順で設定を行ってください：</p>
+          <ol class="list-decimal list-inside space-y-1 text-slate-600 font-mono">
+            <li>Firebase Console (console.firebase.google.com) を開く</li>
+            <li>「Authentication」>「Sign-in method」を開く</li>
+            <li>「新しいプロバイダを追加」から「Google」を選択して有効化</li>
+            <li>サポートメールを設定し、「保存」をクリック</li>
+          </ol>
+        `;
+        showModal(elements.configErrorModal, elements.configErrorCard);
+      } else if (error.code === 'auth/unauthorized-domain') {
+        const currentHost = window.location.hostname || window.location.host || '現在のドメイン';
+        elements.errorModalTitle.textContent = '承認されていないドメイン（Domain Error）';
+        elements.errorModalSubtitle.textContent = 'Firebase Consoleへのドメイン登録が必要です';
+        elements.errorModalBody.innerHTML = `
+          <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium mb-3 flex items-start gap-2">
+            <i class="fa-solid fa-circle-exclamation text-base shrink-0 mt-0.5"></i>
+            <div>
+              <p class="font-bold">auth/unauthorized-domain</p>
+              <p class="text-[11px] opacity-90">このWebサイトのドメインがFirebase認証許可リストに未登録です。</p>
+            </div>
+          </div>
+          
+          <p class="mb-1 text-slate-700 font-medium">現在のドメイン名:</p>
+          <div class="flex items-center gap-2 mb-4 p-2 bg-slate-100 rounded-xl border border-slate-200">
+            <span id="domain-to-copy" class="font-mono text-slate-800 font-bold select-all flex-1 text-xs break-all px-1">${escapeHtml(currentHost)}</span>
+            <button id="btn-copy-domain" type="button" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold transition shrink-0 flex items-center gap-1 shadow-sm active:scale-95">
+              <i class="fa-regular fa-copy"></i>
+              <span>コピー</span>
+            </button>
+          </div>
+
+          <p class="font-semibold text-slate-800 text-xs mb-1.5">【簡単1分設定手順】</p>
+          <ol class="list-decimal list-inside space-y-1 text-slate-600 text-xs leading-relaxed">
+            <li>下のボタンから <span class="font-semibold text-slate-800">Firebase Console</span> を開く</li>
+            <li><span class="font-semibold text-slate-800">Authentication</span> &gt; <span class="font-semibold text-slate-800">設定 (Settings)</span> タブを開く</li>
+            <li><span class="font-semibold text-slate-800">「承認済みドメイン」</span> の「ドメインの追加」をクリック</li>
+            <li>コピーしたドメインを貼り付けて「保存」をクリック</li>
+          </ol>
+
+          <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
+            <a href="https://console.firebase.google.com/u/0/project/tasuku-f99ba/authentication/settings" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-sm">
+              <span>Firebase Console 設定画面を開く</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            </a>
+          </div>
+        `;
+        
+        showModal(elements.configErrorModal, elements.configErrorCard);
+
+        setTimeout(() => {
+          const btnCopy = document.getElementById('btn-copy-domain');
+          if (btnCopy) {
+            btnCopy.addEventListener('click', () => {
+              copyToClipboard(currentHost);
+              showToast('ドメイン名をコピーしました！', 'success');
+            });
+          }
+        }, 100);
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        showToast('ログイン用ポップアップが閉じられました', 'info');
+      } else {
+        showToast('認証エラー: ' + error.message, 'error');
+      }
+    }
+
+    // Helper function to copy text safely
+    function copyToClipboard(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+      } catch (err) {
+        console.error('Copy failed:', err);
+      }
+      document.body.removeChild(textarea);
+    }
+
+    elements.btnCloseErrorModal.addEventListener('click', () => {
+      elements.configErrorCard.classList.remove('scale-100');
+      elements.configErrorCard.classList.add('scale-95');
+      elements.configErrorModal.classList.add('opacity-0', 'pointer-events-none');
+    });
+
+    // Toast System
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      
+      const typeStyles = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-rose-600 text-white',
+        info: 'bg-slate-800 text-white'
+      };
+
+      const iconMap = {
+        success: 'fa-circle-check',
+        error: 'fa-circle-exclamation',
+        info: 'fa-circle-info'
+      };
+
+      toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg font-medium text-xs transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto ${typeStyles[type] || typeStyles.info}`;
+      toast.innerHTML = `
+        <i class="fa-solid ${iconMap[type] || iconMap.info} text-base"></i>
+        <span>${escapeHtml(message)}</span>
+      `;
+
+      elements.toastContainer.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Utility: HTML Escaping
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, function(m) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        }[m];
+      });
+    }
+  </script>
+</body>
+</html>
